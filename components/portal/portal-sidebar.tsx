@@ -77,7 +77,7 @@ const navigationItems: NavItem[] = [
     icon: Trophy,
     roles: ["runner"],
   },
-  { title: "My Team",      href: "/runner/team",        icon: Users,           roles: ["runner"] },
+  { title: "My Team",      href: "/runner/teams",        icon: Users,           roles: ["runner"] },
   { title: "Explore Teams",href: "/runner/explore-teams",icon: UserPlus,        roles: ["runner"] },
   {
     title: "Invitations",
