@@ -92,7 +92,6 @@ function getLegsForPosition(
 }
 
 export function ManagerRacesClient({
-  userId,
   currentRaces,
   upcomingRaces,
   pastRaces,
@@ -155,7 +154,7 @@ export function ManagerRacesClient({
   );
   const filteredUpcomingRaces = useMemo(
     () =>
-      filterRaces(upcomingRaces).sort(
+      filterRaces(upcomingRaces)?.sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
       ),
     [upcomingRaces, searchQuery],
@@ -550,7 +549,7 @@ export function ManagerRacesClient({
     showRegister?: boolean;
   }) => (
     <div className="space-y-4">
-      {races.length === 0 ? (
+      {races?.length === 0 ? (
         <Card className="p-8 sm:p-10 text-center">
           <Icon className="h-10 w-10 mx-auto text-muted-foreground/50" />
           <p className="mt-2 text-sm text-muted-foreground">
@@ -559,7 +558,7 @@ export function ManagerRacesClient({
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
-          {races.map((race) => (
+          {races?.map((race) => (
             <RaceCard key={race.id} race={race} showRegister={showRegister} />
           ))}
         </div>

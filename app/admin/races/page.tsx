@@ -83,7 +83,9 @@ const raceSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title too long"),
   date: z.string().min(1, "Date is required"),
   venue: z.string().min(1, "Venue is required").max(200, "Venue too long"),
-  registration_deadline: z.string().optional(),
+  registration_deadline: z.string().min(1, "Registration Date is required"),
+  starting_city: z.string().min(1, "Starting City is required"),
+  ending_city: z.string().min(1, "Ending City is required"),
   registration_fee: z.coerce
     .number()
     .min(0, "Fee cannot be negative")
@@ -96,9 +98,12 @@ type RaceFormData = z.infer<typeof raceSchema>;
 
 // ── Route Builder Component ───────────────────────────────────────────────
 function RouteBuilder({
+  form,
   waypoints,
   onChange,
 }: {
+  form: ReturnType<typeof useForm<RaceFormData>>;
+
   waypoints: string[];
   onChange: (waypoints: string[]) => void;
 }) {
@@ -162,6 +167,11 @@ function RouteBuilder({
                 placeholder="Starting City (e.g., New York)"
                 className="h-9 text-sm"
               />
+            {form.formState.errors.starting_city && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.starting_city.message}
+              </p>
+            )}
             </div>
           </div>
 
@@ -242,6 +252,11 @@ function RouteBuilder({
                 placeholder="Ending City (e.g., Bostun)"
                 className="h-9 text-sm"
               />
+            {form.formState.errors.ending_city && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.ending_city.message}
+              </p>
+            )}
             </div>
           </div>
         </div>
@@ -351,7 +366,11 @@ function RaceForm({
       </div>
 
       {/* ── Route Builder ── */}
-      <RouteBuilder waypoints={waypoints} onChange={onWaypointsChange} />
+      <RouteBuilder
+        form={form}
+        waypoints={waypoints}
+        onChange={onWaypointsChange}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="registration_deadline">
@@ -363,9 +382,15 @@ function RaceForm({
         <Input
           id="registration_deadline"
           type="datetime-local"
+          min={new Date().toISOString().slice(0, 16)}
           {...form.register("registration_deadline")}
           className="[color-scheme:light]"
         />
+        {form.formState.errors.registration_deadline && (
+          <p className="text-sm text-destructive">
+            {form.formState.errors.registration_deadline.message}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Teams cannot register after this date
         </p>
@@ -722,7 +747,7 @@ export default function AdminRacesPage() {
                 </TableCell>
                 <TableCell>
                   <Badge
-                  className="capitalize"
+                    className="capitalize"
                     variant={
                       race.status === "upcoming"
                         ? "default"

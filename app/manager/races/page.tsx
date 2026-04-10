@@ -53,7 +53,6 @@ export type AssistantTeamRow = {
 async function getManagerRacesPageData() {
   const supabase = await createClient();
 
-  // Get current user
   const {
     data: { user },
     error: userError,
@@ -63,7 +62,6 @@ async function getManagerRacesPageData() {
     redirect("/auth/login");
   }
 
-  // Verify user is a manager
   const { data: userProfile } = await supabase
     .from("users")
     .select("role")
@@ -77,7 +75,6 @@ async function getManagerRacesPageData() {
     redirect("/auth/login");
   }
 
-  // Get all races
   const { data: allRaces } = await supabase
     .from("races")
     .select("*")
@@ -85,121 +82,99 @@ async function getManagerRacesPageData() {
 
   const now = new Date();
 
-  // Categorize races
-
   const racesWithStatus = (allRaces || []).map((race) => {
     const raceDate = new Date(race.date);
     const deadline = race.registration_deadline
       ? new Date(race.registration_deadline)
       : null;
+
     let status: "upcoming" | "current" | "past" = race.status;
-    if (raceDate < now) {
-      status = "past";
-    } else if (deadline && deadline <= now) {
-      status = "current";
-    } else {
-      status = "upcoming";
-    }
+
+    if (raceDate < now) status = "past";
+    else if (deadline && deadline <= now) status = "current";
+    else status = "upcoming";
+
     return { ...race, status };
   });
 
-  const upcomingRaces = racesWithStatus
-    .filter((race) => race.status === "upcoming")
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const upcomingRaces = racesWithStatus.filter((r) => r.status === "upcoming");
+  const currentRaces = racesWithStatus.filter((r) => r.status === "current");
+  const pastRaces = racesWithStatus.filter((r) => r.status === "past");
 
-  const currentRaces = racesWithStatus.filter(
-    (race) => race.status === "current",
-  );
-
-  const pastRaces = racesWithStatus.filter((race) => race.status === "past");
-
-  const { data: managerTeams, error: managerError } = await supabase
+  const { data: managerTeams } = await supabase
     .from("teams")
     .select("*")
     .eq("manager_id", user.id);
-
-  if (managerError) {
-    console.error("Manager teams error:", managerError.message);
-  }
 
   let teams: Team[] = [];
 
   if (managerTeams && managerTeams.length > 0) {
     teams = managerTeams as Team[];
   } else {
-    const { data: assistantTeams, error: assistantError } = await supabase
+    const { data: assistantTeams } = await supabase
       .from("assistant_managers")
       .select(`team_id(*)`)
       .eq("user_id", user.id);
 
-    if (assistantError) {
-      console.error("Assistant teams error:", assistantError.message);
-    }
-
     teams =
       (assistantTeams as AssistantTeamRow[] | null)?.map((t) => t.team_id) ||
       [];
-
-
-    // Get registrations for manager's teams
-    let registrations: Registration[] = [];
-    if (teams && teams.length > 0) {
-      const teamIds = teams.map((t) => t.id);
-      const { data: regs } = await supabase
-        .from("registrations")
-        .select("*")
-        .in("team_id", teamIds);
-
-      registrations = (regs || []) as Registration[];
-    }
-
-    // Get all runners in manager's teams
-    let runners: Runner[] = [];
-    if (teams && teams.length > 0) {
-      const allMemberIds = new Set<string>();
-      for (const team of teams) {
-        if (team.members) {
-          for (const memberId of team.members) {
-            allMemberIds.add(memberId);
-          }
-        }
-      }
-
-      if (allMemberIds.size > 0) {
-        const { data: members } = await supabase
-          .from("users")
-          .select("id, first_name, last_name, email, gender, age")
-          .in("id", Array.from(allMemberIds))
-          .eq("role", "runner");
-
-        runners = (members || []) as Runner[];
-      }
-    }
-
-    // Get all registrations across all races to track runner participation
-    const { data: allRegistrations } = await supabase
-      .from("registrations")
-      .select("race_id, runners");
-
-    // Build a map of runner -> race count
-    const runnerRaceCount: Record<string, number> = {};
-    for (const reg of allRegistrations || []) {
-      for (const runnerId of reg.runners || []) {
-        runnerRaceCount[runnerId] = (runnerRaceCount[runnerId] || 0) + 1;
-      }
-    }
-
-    return {
-      userId: user.id,
-      currentRaces: currentRaces as Race[],
-      upcomingRaces: upcomingRaces as Race[],
-      pastRaces: pastRaces as Race[],
-      teams: (teams || []) as Team[],
-      registrations,
-      runners,
-      runnerRaceCount,
-    };
   }
+
+  // ✅ ALWAYS RUN
+  let registrations: Registration[] = [];
+  if (teams.length > 0) {
+    const teamIds = teams.map((t) => t.id);
+    const { data: regs } = await supabase
+      .from("registrations")
+      .select("*")
+      .in("team_id", teamIds);
+
+    registrations = (regs || []) as Registration[];
+  }
+
+  let runners: Runner[] = [];
+  if (teams.length > 0) {
+    const allMemberIds = new Set<string>();
+
+    teams.forEach((team) => {
+      team.members?.forEach((id) => allMemberIds.add(id));
+    });
+
+    if (allMemberIds.size > 0) {
+      const { data: members } = await supabase
+        .from("users")
+        .select("id, first_name, last_name, email, gender, age")
+        .in("id", Array.from(allMemberIds))
+        .eq("role", "runner");
+
+      runners = (members || []) as Runner[];
+    }
+  }
+
+  const { data: allRegistrations } = await supabase
+    .from("registrations")
+    .select("race_id, runners");
+
+  const runnerRaceCount: Record<string, number> = {};
+
+  for (const reg of allRegistrations || []) {
+    for (const runnerId of reg.runners || []) {
+      runnerRaceCount[runnerId] = (runnerRaceCount[runnerId] || 0) + 1;
+    }
+  }
+
+  // ✅ FINAL RETURN (FIXED)
+  return {
+    userId: user.id,
+    currentRaces: currentRaces as Race[],
+    upcomingRaces: upcomingRaces as Race[],
+    pastRaces: pastRaces as Race[],
+    teams,
+    registrations,
+    runners,
+    runnerRaceCount,
+  };
 }
 export default async function ManagerRacesPage() {
   const data = await getManagerRacesPageData();
