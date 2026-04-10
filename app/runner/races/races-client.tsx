@@ -43,6 +43,7 @@ import Link from "next/link";
 interface RacesClientProps {
   userId: string;
   upcomingRaces: Race[];
+  currentRaces: Race[];
   pastRaces: Race[];
   teams: Team[];
   registrations: Registration[];
@@ -80,6 +81,7 @@ export function RacesClient({
   userId,
   upcomingRaces,
   pastRaces,
+  currentRaces,
   teams,
   registrations,
   teamMembers,
@@ -140,6 +142,7 @@ export function RacesClient({
 
   const filteredUpcomingRaces = useMemo(() => filterRaces(upcomingRaces), [upcomingRaces, searchQuery]);
   const filteredPastRaces = useMemo(() => filterRaces(pastRaces), [pastRaces, searchQuery]);
+  const filteredCurrentRaces = useMemo(() => filterRaces(currentRaces), [pastRaces, searchQuery]);
 
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -307,6 +310,10 @@ export function RacesClient({
       <Tabs defaultValue="upcoming" className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <TabsList className="w-full max-w-xs sm:max-w-md">
+            <TabsTrigger value="current" className="flex-1 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+              <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Current ({filteredCurrentRaces.length})</span>
+            </TabsTrigger>
             <TabsTrigger value="upcoming" className="flex-1 flex items-center justify-center gap-1.5 text-xs sm:text-sm">
               <Trophy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Upcoming ({filteredUpcomingRaces.length})</span>
@@ -345,6 +352,17 @@ export function RacesClient({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
               {filteredPastRaces.map((race) => (
+                <RaceCard key={race.id} race={race} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+           <TabsContent value="current" className="mt-4 sm:mt-6">
+          {filteredCurrentRaces.length === 0 ? (
+            <EmptyState icon={Clock} title={searchQuery ? "No races match your search" : "No past races"} subtitle={searchQuery ? "Try a different search term" : "Your completed races will appear here"} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
+              {filteredCurrentRaces.map((race) => (
                 <RaceCard key={race.id} race={race} />
               ))}
             </div>

@@ -163,15 +163,16 @@ function RouteBuilder({
             <div className="flex-1">
               <Input
                 value={startCity}
+                {...form.register("starting_city")}
                 onChange={(e) => updateStart(e.target.value)}
                 placeholder="Starting City (e.g., New York)"
                 className="h-9 text-sm"
               />
-            {form.formState.errors.starting_city && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.starting_city.message}
-              </p>
-            )}
+              {form.formState.errors.starting_city && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.starting_city.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -248,15 +249,16 @@ function RouteBuilder({
             <div className="flex-1">
               <Input
                 value={endCity}
+                {...form.register("ending_city")}
                 onChange={(e) => updateEnd(e.target.value)}
                 placeholder="Ending City (e.g., Bostun)"
                 className="h-9 text-sm"
               />
-            {form.formState.errors.ending_city && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.ending_city.message}
-              </p>
-            )}
+              {form.formState.errors.ending_city && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.ending_city.message}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -489,6 +491,8 @@ export default function AdminRacesPage() {
       date: "",
       venue: "",
       registration_deadline: "",
+      starting_city: "",
+      ending_city: "",
       registration_fee: 10,
       details: "",
       rules: "",

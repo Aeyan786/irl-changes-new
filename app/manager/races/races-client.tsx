@@ -438,7 +438,7 @@ export function ManagerRacesClient({
         return (
           <Badge
             variant="outline"
-            className="border-warning text-warning-foreground bg-warning/10 text-xs whitespace-nowrap"
+            className="border-warning text-amber-600 bg-warning/10 text-xs whitespace-nowrap"
           >
             <Clock className="mr-1 h-3 w-3" />
             Pending

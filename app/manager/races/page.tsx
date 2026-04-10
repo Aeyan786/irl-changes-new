@@ -142,12 +142,13 @@ async function getManagerRacesPageData() {
     });
 
     if (allMemberIds.size > 0) {
+      const roles = ["runner", "assistant_manager", "manager"];
+
       const { data: members } = await supabase
         .from("users")
         .select("id, first_name, last_name, email, gender, age")
         .in("id", Array.from(allMemberIds))
-        .eq("role", "runner");
-
+        .in("role", roles);
       runners = (members || []) as Runner[];
     }
   }
